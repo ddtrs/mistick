@@ -1,0 +1,45 @@
+name: Build APK v2
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unpack v2 ZIP
+        run: |
+          rm -rf app settings.gradle.kts build.gradle.kts gradle.properties
+          unzip -o MiTvStickLauncher_v2.zip
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.7'
+
+      - name: Build APK
+        run: |
+          gradle assembleDebug assembleRelease --no-daemon --stacktrace
+          cp app/build/outputs/apk/release/app-release.apk MiTvStickLauncher-v2.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MiTvStickLauncher-v2-APK
+          path: MiTvStickLauncher-v2.apk
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v2.0
+          name: "Готовый APK v2.0"
+          files: MiTvStickLauncher-v2.apk
+          
