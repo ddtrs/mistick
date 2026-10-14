@@ -1,0 +1,45 @@
+name: Build APK
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unpack ZIP and prepare
+        run: |
+          unzip -o MiTvStickLauncher_AndroidProject.zip
+          sed -i 's/package="com.mitv.customlauncher"//g' app/src/main/AndroidManifest.xml
+          sed -i 's/@id\//@+id\//g' app/src/main/res/layout/activity_launcher.xml
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.7'
+
+      - name: Build APK
+        run: |
+          gradle assembleDebug assembleRelease -x lint -x lintVitalRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk MiTvStickLauncher.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MiTvStickLauncher-APK
+          path: MiTvStickLauncher.apk
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0
+          name: "Готовый APK"
+          files: MiTvStickLauncher.apk
